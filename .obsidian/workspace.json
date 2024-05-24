@@ -13,13 +13,26 @@
             "state": {
               "type": "markdown",
               "state": {
+                "file": "README Base.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "f1d983bc02f2ab10",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
                 "file": "README.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -146,9 +159,12 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "b2ecca26fa000aee",
+  "active": "f1d983bc02f2ab10",
   "lastOpenFiles": [
+    "README Base.md",
     "README.md",
+    "Sin confirmar 694390.crdownload",
+    "recursos/directorios.png",
     "recursos/arquitectura_hexagonal.png",
     "recursos",
     "Introducción.md",

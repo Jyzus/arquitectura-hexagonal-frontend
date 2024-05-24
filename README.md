@@ -5,7 +5,7 @@ Este repositorio es una traducción directa de del artículo de juanm4, autor or
 **Tabla de contenido**
 
 ## Introducción 👋
----
+
 Existen múltiples definiciones para el término arquitectura, según el contexto y la rama de desarrollo de la que provenga. Por estos motivos es complicado llegar a un consenso y a una definición única que sea válida para todos los casos. Entonces, según el desarrollo de software frontend, y desde un punto de vista profesional, la definición podría ser la siguiente:
 
 **Los desarrolladores llaman arquitectura al conjunto de patrones de desarrollo que nos permiten definir pautas a seguir en nuestro software en cuanto a límites y restricciones. Es la guía que debemos seguir para ordenar nuestro código y lograr que las distintas partes de la aplicación se comuniquen entre sí.**
@@ -21,7 +21,7 @@ Uno de los patrones más utilizados para diseñar arquitectura de software es la
 El objetivo de este patrón es dividir nuestra aplicación en diferentes capas, permitiendo que evolucione de forma aislada y haciendo que cada entidad sea responsable de una única funcionalidad.
 
 ## ¿Por qué esta arquitectura se llama hexagonal? 🤔
----
+
 La idea de representar esta arquitectura con un hexágono se debe a la facilidad de asociar el concepto teórico con el concepto visual. Dentro de este hexágono es donde se encuentra nuestro código base. Esta parte se llama dominio.
 
 Cada lado de este hexágono representa una interacción con un servicio externo, por ejemplo: servicios http, base de datos, renderizado...
@@ -33,7 +33,7 @@ La comunicación entre el dominio y el resto de actores se realiza en la capa de
 Una de las preguntas más recurrentes entre los profesionales que ven por primera vez esta arquitectura es: ¿Por qué un hexágono? Bueno, el uso de un hexágono es sólo una representación teórica. La cantidad de servicios que podríamos agregar es infinita y podemos integrar tantos como necesitemos.
 
 ## Mismo concepto diferentes nombres 😒
----
+
 El patrón de arquitectura hexagonal también se denomina puertos y adaptadores. Este nombre surge de una separación dentro de una capa de **infraestructura**, donde tendremos dos subcapas:
 
 - **Puerto**: Es la interfaz que nuestro código debe implementar para poder abstraerse de la tecnología. Aquí definimos las firmas de métodos que existirán. 
@@ -45,25 +45,25 @@ Así, nuestro dominio realizará llamadas a la subcapa que corresponde al puerto
 El concepto de Puertos y Adaptadores está muy ligado a la programación orientada a objetos y al uso de interfaces, y tal vez, la implementación de este patrón en la programación funcional pueda ser diferente al concepto inicial. De hecho, han surgido muchos patrones que iteran sobre esto, como la **Arquitectura Onion** o la **Arquitectura Limpia (Clean architeture)**. Al final el objetivo es el mismo: dividir nuestra aplicación en capas, separando dominio e infraestructura.
 
 ## ¿Cómo afecta la mantenibilidad? 🧐
----
+
 El hecho de tener nuestro código separado en capas, donde cada una de ellas tiene una única responsabilidad, ayuda a que cada capa evolucione de diferentes maneras, sin impactar a las demás.
 
 Además, con esta segmentación conseguimos una alta cohesión, donde cada capa tendrá una responsabilidad única y bien definida dentro del contexto de nuestro software.
 
 ## ¿Cómo afecta la interfaz? 😮
----
+
 Actualmente existen una serie de falencias en el uso de metodologías a la hora de crear aplicaciones. Hoy en día, contamos con una increíble cantidad de herramientas que nos permiten desarrollar aplicaciones muy rápidamente y, al mismo tiempo, hemos dejado en un segundo plano el análisis y la implementación de arquitecturas conocidas y probadas.
 
 Sin embargo, aunque estas arquitecturas puedan parecer del pasado, donde los lenguajes no evolucionaron tan rápido, estas arquitecturas han sido mostradas y adaptadas para brindarnos la escalabilidad que necesitamos para desarrollar aplicaciones reales.
 
 ## Contexto histórico 😴
----
+
 Hace dos décadas las aplicaciones de escritorio eran la principal herramienta a desarrollar. En ellos toda nuestra aplicación estaba instalada en la máquina, a través de librerías, y había un alto acoplamiento entre vista y comportamiento. Luego, quisimos escalar nuestras aplicaciones para obtener un software más fácil de mantener, con bases de datos centralizadas. Muchos de ellos fueron migrados a un servidor. Con esto, nuestras aplicaciones de escritorio quedaron reducidas a aplicaciones "tontas", que no requerían acceso, persistencia ni muchos datos. Finalmente, si la aplicación necesitaba algunos datos, tenía la responsabilidad de realizar estas llamadas a los servidores externos a través de servicios de red. Es aquí cuando empezamos a distinguir entre "frontend" y "backend".
 
 Durante los siguientes años tuvimos el boom web. Muchas aplicaciones de escritorio se adaptaron a los navegadores, donde las limitaciones eran mayores solo con HTML. Posteriormente JAVASCRIPT empezó a darle más posibilidades al navegador.
 
 ## Presente 😌
----
+
 Las vistas siempre se habían limitado únicamente a la representación de datos y nunca habían necesitado funcionalidades superiores, hasta ahora. Con necesidades comunes, las aplicaciones frontend tienen más requisitos que hace años. Por poner algunos ejemplos: gestión del estado, seguridad, asincronía, animaciones, integración con servicios de terceros…
 
 Por todas estas razones, debemos empezar a aplicar patrones en estas aplicaciones.
@@ -97,3 +97,165 @@ Una vez entendido esto, debemos asumir que las herramientas altamente acopladas 
 Ahora ha llegado el momento del espectáculo, intentemos poner en práctica toda esta teoría a través de un ejemplo. Escribamos un código.
 
 Imaginemos que tenemos que diseñar un carrito de compras, y tenemos que hacerlo en "reactjs", "vuejs" y "React Native".
+
+Primero pensamos en qué entidades entran en juego, sabiendo que recuperaremos los datos a través de un servicio de terceros (lo veremos más adelante).
+- Producto
+- Carrito de compras
+
+También sabemos que estas entidades deben estar disponibles para el usuario, para que pueda interactuar con ellas. El usuario podría hacer lo siguiente:
+- Ver una lista de productos
+- Añadir productos al carrito de compras
+- Eliminar productos del carrito de compras
+
+Ahora imagine que tenemos las siguientes reglas comerciales:
+- Un carrito de compras no puede tener más de 5 productos
+- El mismo producto no puede estar en el carrito dos o más veces
+- El precio máximo del carrito debe ser 100€
+
+## Estructura de directorios 🗂️
+
+Aquí podemos ver un ejemplo de cómo organizar los directorios, tanto para la aplicación "React" como para la aplicación "Vue".
+
+![[directorios.png]]
+
+Déjame explicarte un poco más qué representa cada carpeta.
+
+- **domain (Dominio)**
+	- **models (Modelos):**  Aquí tenemos los modelos que necesitaremos, tanto tipos como interfaces de cada modelo.
+	- **repositories (Repositorios):** Todo tipo e interfaces relacionadas con los repositorios (un repositorio se encarga de traer datos de un servicio web, o una base de datos, o un archivo...).
+	- **services (Servicios):** Un servicio se encarga de interactuar con nuestros modelos y realizar acciones sobre ellos. Por ejemplo para conseguir los productos o añadir un producto al carrito.
+- **infrastructure (Infraestructura)**
+	- **http**: Aquí se almacenan cosas relacionadas con nuestro cliente, en este caso un cliente http.
+		- **dto:** Todos los dto que recibimos de un repositorio.
+	- **instances (Instancias):** Aquí hemos creado instancias concretas para nuestro cliente y repositorios. Puede verse como el punto de entrada de su sistema. Quizás este no sea el mejor lugar para esta carpeta, la hemos creado de esta manera para utilizar datos falsos ya que no tenemos un servicio web.
+	- **repositories (Repositorios):** Aquí definimos los repositorios que necesitamos para obtener productos.
+	- **views (Vistas):** Esta carpeta almacena todo lo relacionado con nuestras vistas.
+		- **react-ui:** Proyecto React que interactúa con nuestros modelos y servicios.
+		- **reactnative-ui:** Proyecto React Native que interactúa con nuestros modelos y servicios.
+		- **vue-ui**: Proyecto Vue que interactúa con nuestros modelos y servicios.
+- **mocks:** Aquí tenemos datos simulados que nuestro cliente utilizará para proporcionar datos concretos.
+- **test:** Todas las pruebas unitarias para los casos de uso.
+
+Hemos creado dos directorios: dominio e infraestructura. Todos los componentes visuales se asignan dentro de la infraestructura (recuerde que las vistas y representaciones no pertenecen a nuestro dominio).
+
+### Domain 🛡️
+
+Ahora vamos a definir los modelos de dominio (Producto y Carrito) con las respectivas interfaces requeridas.
+
+```ts
+// src/domain/models/Product.ts
+
+export type Product = {
+    id: string;
+    title: string;
+    price: number;
+};
+```
+
+```ts
+// src/domain/models/Carts.ts
+
+import { Product } from './Product';
+
+// Esta interfaz define qué operaciones podemos realizar en un carrito.
+export interface ICart {
+    createCart: () => Cart;
+    addProductToCart: (cart: Cart, product: Product) => Cart;
+    removeProductFromCart: (cart: Cart, product: Product) => Cart;
+}
+
+export type Cart = {
+    id: string;
+    products: Product[];
+};
+```
+
+Ahora definimos una funcionalidad que nos permite agregar y quitar un "Producto", teniendo en cuenta los requisitos y reglas del negocio.
+
+Dependiendo del patrón de diseño que utilicemos, esta implementación puede ser ligeramente diferente. Para este caso utilizamos una opción sencilla, un módulo de servicio que maneja los datos.
+
+```ts
+// src/domain/services/Cart.service.ts
+
+import { Cart, ICart } from '../models/Cart';
+import { Product } from '../models/Product';
+
+const createCart = (): Cart => {
+    return { id: Date.now().toString(), products: [] };
+};
+
+const hasProduct = (cart: Cart, product: Product): boolean => {
+    return !!cart.products.find(item => item.id === product.id);
+};
+
+const isCartFull = (cart: Cart): boolean => {
+    return cart.products.length >= 5;
+};
+
+const isCartLimitPriceExceeded = (cart: Cart, product: Product, limit: number): boolean => {
+    let totalPriceCart = 0;
+    cart.products.forEach(item => {
+        totalPriceCart += item.price;
+    });
+    totalPriceCart += product.price;
+
+    return totalPriceCart > limit;
+};
+
+const addProductToCart = (cart: Cart, product: Product): Cart => {
+    if (!hasProduct(cart, product) && !isCartFull(cart) && !isCartLimitPriceExceeded(cart, product, 100))
+        cart.products = [...cart.products, product];
+    return { ...cart };
+};
+
+const removeProductFromCart = (cart: Cart, product: Product): Cart => {
+    const productsWithRemovedItem: Product[] = [];
+    cart.products.forEach(item => {
+        if (item.id !== product.id) productsWithRemovedItem.push(item);
+    });
+    cart.products = [...productsWithRemovedItem];
+    return { ...cart };
+};
+
+// Este servicio debe implementar las operaciones definidas para la interfaz Cart.
+export const cartService: ICart = {
+    createCart,
+    addProductToCart,
+    removeProductFromCart
+};
+```
+
+### Acceso a datos 📰
+
+Además, necesitamos obtener una lista de productos. En la mayoría de los casos estos datos se obtienen de servicios http, pero también podríamos usar graphql o cualquier otra biblioteca. Además, dentro de http podríamos usar fetch, axios, xhr...
+
+En cualquier caso, esto es parte de la capa de infraestructura y este objeto será consumido por una entidad de repositorio.
+
+Primero, definimos la estructura de los datos devueltos por la API. Este tipo de datos se denomina "Objeto de transferencia de datos (DTO)":
+
+```ts
+// src/infrastructure/http/dto/ProductDTO.ts
+
+export interface ProductDTO {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+}
+```
+
+Además, hemos declarado qué métodos necesitamos implementar para http. Así, más adelante podremos utilizar nuestro cliente favorito (fetch, axios...) implementando esta interfaz:
+
+```ts
+// src/domain/repositories/Http.ts
+
+export interface Http {
+    get: <T>(path: string, params?: Record<string, any>, config?: any) => Promise<T | any>;
+    post: <T>(path: string, params?: Record<string, any>, config?: any) => Promise<T | any>;
+    put: <T>(path: string, params?: Record<string, any>, config?: any) => Promise<T | any>;
+    delete: <T>(path: string, params?: any, config?: any) => Promise<T | any>;
+}
+```
+
+Nuestro cliente, que será una instancia que implemente la interfaz `Http`, será inyectado como una dependencia a nuestro repositorio. Así, en cualquier momento, podremos cambiar de cliente al instante. Esta técnica se llama inyección de dependencia y, aunque no es muy común en JavaScript, es muy poderosa y está ahí para usarse. Typecript nos lo pone muy fácil.
+
