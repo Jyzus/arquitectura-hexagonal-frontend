@@ -355,7 +355,7 @@ La vista y capa para acceder a los datos están en infraestructura. Sin embargo,
 
 import { ProductRepository } from '../repositories/ProductRepository';
 
-// Here we can change the repository by one that implement the IProductRepository interface
+// Aquí podemos cambiar el repositorio por uno que implemente la interfaz IProductRepository
 //const repository: IProductRepository = productRepository;
 
 export const productService = (repository: ProductRepository): ProductRepository => ({
@@ -367,4 +367,414 @@ export const productService = (repository: ProductRepository): ProductRepository
     }
 });
 ```
+
+Al igual que con nuestro cliente `Http`, utilizamos la inyección de dependencia en nuestro servicio, que recibe un repositorio como parámetro. De esta forma podremos cambiar de repositorio en cualquier momento. (Quizás en el futuro tengamos que obtener los productos de una base de datos local en lugar de un servicio de descanso).
+
+---
+
+Bueno, ahora hemos definido cómo obtener los datos y la funcionalidad que necesitamos para agregar/eliminar elementos en nuestro carrito.
+
+Independientemente de si usas react o vue, ten en cuenta que el código escrito hasta ahora es común para ambas aplicaciones, por lo que la llamada a nuestros métodos desde nuestro componente será la misma.
+
+Dentro de la carpeta de vistas hemos creado tantos proyectos como hemos necesitado. En nuestro caso tenemos react, vue y react native.
+
+Lo primero que vamos a hacer es definir el estado inicial y las funciones para manejar el estado del carrito.
+
+#### React
+
+```tsx
+// src/infrastructure/views/react-ui/src/App.tsx
+
+import React, { useState } from 'react';
+import { ProductList } from './views/ProductList';
+import { Cart } from '@domain/models/Cart';
+import { Product } from '@domain/models/Product';
+import { cartService } from '@domain/services/CartService';
+
+const App = () => {
+    const [cart, setCart] = useState<Cart>(cartService.createCart());
+
+    const handleAddToCart = (product: Product) => {
+        setCart(cartService.addProductToCart(cart, product));
+    };
+
+    const handleRemoveToCart = (product: Product) => {
+        setCart(cartService.removeProductFromCart(cart, product));
+    };
+
+    const renderCartProducts = (): JSX.Element[] => {
+        const cartProducts: JSX.Element[] = [];
+        let totalCart = 0;
+
+        cart.products.forEach(product => {
+            totalCart += product.price;
+            cartProducts.push(
+                <div key={product.id}>
+                    <label>{product.title} </label>
+                    <span>({product.price} €) </span>
+                    <button onClick={() => handleRemoveToCart(product)}>remove</button>
+                    <br />
+                </div>
+            );
+        });
+
+        cartProducts.push(
+            <div key={'total'}>
+                <br />
+                <label>
+                    <b>Total:</b>
+                </label>
+                <span>{totalCart} €</span>
+                <br />
+            </div>
+        );
+        return cartProducts;
+    };
+
+    return (
+        <div>
+            <h1>Shopping cart</h1>
+            <h2>Products in the cart</h2>
+            {renderCartProducts()}
+            <ProductList onSelectProduct={handleAddToCart} />
+        </div>
+    );
+};
+
+export default App;
+```
+
+#### Vue
+
+```vue
+<!--
+// src/infrastructure/views/vue-ui/src/App.vue
+-->
+<template>
+    <div id="app">
+        <h1>Shopping cart</h1>
+        <h2>Products in the cart</h2>
+        <div v-for="product in cart.products" :key="product.id">
+            <label>{{ product.title }} </label>
+            <span>({{ product.price }} €) </span>
+            <button @click="handleRemoveProductFromCart(product)">remove</button>
+            <br />
+        </div>
+        <div>
+            <br />
+            <label>
+            <b>Total:</b>
+            </label>
+            <span>{{ getTotalCart() }} €</span>
+            <br />
+        </div>
+        <ProductList @onSelectProduct="handleAddProductToCart" />
+    </div>
+</template>
+
+<script lang="ts">
+import { Product } from '@/domain/models/Product';
+import ProductList from '@/infrastructure/views/ProductList.vue';
+import { cartService } from '@/domain/services/Cart.service';
+import { Cart } from '@/domain/models/Cart';
+type DataProps = {
+    cart: Cart;
+};
+export default {
+    components: {
+        ProductList
+    },
+    data(): DataProps {
+        return {
+            cart: cartService.createCart()
+        };
+    },
+    mounted() {
+        this.cart = cartService.createCart();
+    },
+    methods: {
+        handleAddProductToCart(product: Product) {
+            this.cart = cartService.addProductToCart(this.cart, product);
+        },
+        handleRemoveProductFromCart(product: Product) {
+            this.cart = cartService.removeProductFromCart(this.cart, product);
+        },
+        getTotalCart() {
+            let totalCart = 0;
+            this.cart.products.forEach(product => {
+                totalCart += product.price;
+            });
+            return totalCart;
+        }
+    }
+};
+</script>
+```
+
+#### React native
+
+```tsx
+// src/infrastructure/views/reactnative-ui/App.tsx
+
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet, ScrollView, View, Text, StatusBar, Button } from 'react-native';
+
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { Cart } from '@domain/models/Cart';
+import { cartService } from '@domain/services/CartService';
+import { Product } from '@domain/models/Product';
+import { ProductList } from '@/components/ProductList';
+
+const App = () => {
+    const [cart, setCart] = useState<Cart>(cartService.createCart());
+
+    const handleAddToCart = (product: Product) => {
+        setCart(cartService.addProductToCart(cart, product));
+    };
+
+    const handleRemoveToCart = (product: Product) => {
+        setCart(cartService.removeProductFromCart(cart, product));
+    };
+
+    const renderCartProducts = (): JSX.Element[] => {
+        const cartProducts: JSX.Element[] = [];
+        let totalCart = 0;
+
+        cart.products.forEach(product => {
+            totalCart += product.price;
+            cartProducts.push(
+                <View style={styles.productInCart} key={product.id}>
+                    <Text>{product.title} </Text>
+                    <Text>({product.price} €) </Text>
+                    <Button color={'red'} onPress={() => handleRemoveToCart(product)} title={'remove'} />
+                </View>
+            );
+        });
+
+        cartProducts.push(
+            <View style={styles.productInCart} key={'total'}>
+                <Text>Total:</Text>
+                <Text> {totalCart} €</Text>
+            </View>
+        );
+        return cartProducts;
+    };
+
+    return (
+        <>
+            <StatusBar barStyle='default' />
+            <SafeAreaView>
+                <ScrollView contentInsetAdjustmentBehavior='automatic' style={styles.scrollView}>
+                    <Text style={styles.titlePage}>Shopping cart</Text>
+                    <Text style={styles.title}>Products in the car</Text>
+                    {renderCartProducts()}
+                    <ProductList onSelectProduct={handleAddToCart} />
+                </ScrollView>
+            </SafeAreaView>
+        </>
+    );
+};
+
+const styles = StyleSheet.create({
+    scrollView: {
+        backgroundColor: Colors.lighter
+    },
+    titlePage: {
+        fontWeight: 'bold',
+        margin: 5,
+        fontSize: 20
+    },
+    title: {
+        fontWeight: 'bold',
+        margin: 5
+    },
+    productInCart: {
+        flexDirection: 'row',
+        flex: 1,
+        alignContent: 'center',
+        alignItems: 'center',
+        margin: 10
+    }
+});
+
+export default App;
+```
+
+Vamos a mostrar la lista de productos.
+
+#### React
+
+```tsx
+// src/infrastructure/views/react-ui/src/views/ProductList.tsx
+
+import React, { useCallback } from 'react';
+import { Product } from '@domain/models/Product';
+import { productService } from '@domain/services/ProductService';
+import { productRepositoryFake } from '@infrastructure/instances/productRepositoryFake';
+
+interface ProductListProps {
+    onSelectProduct: (product: Product) => void;
+}
+
+export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct }) => {
+    const [products, setProducts] = React.useState<Product[]>([]);
+
+    const getProducts = useCallback(async () => {
+        try {
+            const responseProducts = await productService(productRepositoryFake).getProducts();
+            setProducts(responseProducts);
+        } catch (exception) {
+            console.error(exception);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        getProducts();
+    }, []);
+
+    const handleSelectProduct = (product: Product) => {
+        onSelectProduct(product);
+    };
+
+    return (
+        <div>
+            <h2>List of products</h2>
+            <ul>
+                {products.map(product => (
+                    <li key={product.id}>
+                        <button
+                            onClick={() => {
+                                handleSelectProduct(product);
+                            }}
+                        >
+                            {product.title}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+```
+
+#### Vue
+
+```vue
+<!--
+// src/infrastructure/views/vue-ui/src/views/ProductList.vue
+-->
+<template>
+    <div>
+        <h2>List of products</h2>
+        <ul>
+            <li v-for="product in products" :key="product.id">
+                <button @click="handleSelectProduct(product)">{{ product.title }}</button>
+            </li>
+        </ul>
+    </div>
+</template>
+
+<script lang="ts">
+import { productService } from '@domain/services/ProductService';
+import { Product } from '@domain/models/Product';
+import { productRepositoryFake } from '@infrastructure/instances/productRepositoryFake';
+type DataProps = {
+    products: Product[];
+};
+export default {
+    name: 'ProductList',
+    data(): DataProps {
+        return {
+            products: []
+        };
+    },
+    mounted() {
+        productService(productRepositoryFake)
+            .getProducts()
+            .then(response => (this.products = response));
+    },
+    methods: {
+        handleSelectProduct(product: Product) {
+          this.$emit('onSelectProduct', product);
+        }
+    }
+};
+</script>
+```
+
+#### React native
+
+```tsx
+// src/infrastructure/views/reactnative-ui/src/components/ProductList.tsx
+
+import React, { useCallback, useState } from 'react';
+import { StyleSheet, View, Text, Button } from 'react-native';
+
+import { Product } from '@domain/models/Product';
+import { productService } from '@domain/services/ProductService';
+import { productRepositoryFake } from '@infrastructure/instances/productRepositoryFake';
+
+interface ProductListProps {
+    onSelectProduct: (product: Product) => void;
+}
+
+export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct }) => {
+    const [products, setProducts] = useState<Product[]>([]);
+
+    const getProducts = useCallback(async () => {
+        try {
+            const responseProducts = await productService(productRepositoryFake).getProducts();
+            setProducts(responseProducts);
+        } catch (exception) {
+            console.error(exception);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        getProducts();
+    }, []);
+
+    const handleSelectProduct = (product: Product) => {
+        onSelectProduct(product);
+    };
+
+    return (
+        <View>
+            <Text style={styles.title}>List of products</Text>
+            <View>
+                {products.map(product => (
+                    <View style={styles.buttonProduct} key={product.id}>
+                        <Button
+                            onPress={() => {
+                                handleSelectProduct(product);
+                            }}
+                            title={product.title}
+                        >
+                            <Text>{product.title}</Text>
+                        </Button>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    title: {
+        fontWeight: 'bold',
+        margin: 5
+    },
+    buttonProduct: {
+        margin: 5
+    }
+});
+```
+
+Es interesante la gestión del estado de los elementos del carrito, pero es algo relacionado con la visualización de datos y esta gestión pertenece a la tecnología que estemos usando (React o Vue).
+
+Además, si prestamos atención al código anterior, podemos ver que todo nuestro código está desacoplado. Nuestra capa de dominio puede ser utilizada por reaccionar, vue y reaccionar nativo.
+
+Además, aquí podemos ver la inyección de dependencia en acción. Usamos el servicio del producto, que recibe un repositorio `ProductRepository` específico que, a su vez, recibe un cliente `Http` específico.
+
+### Bibliotecas de terceros 🛠️
 
