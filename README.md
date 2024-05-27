@@ -259,3 +259,112 @@ export interface Http {
 
 Nuestro cliente, que será una instancia que implemente la interfaz `Http`, será inyectado como una dependencia a nuestro repositorio. Así, en cualquier momento, podremos cambiar de cliente al instante. Esta técnica se llama inyección de dependencia y, aunque no es muy común en JavaScript, es muy poderosa y está ahí para usarse. Typecript nos lo pone muy fácil.
 
+Para este ejemplo, hemos creado dos clientes (envoltorios), uno que usa axios y el otro devolverá datos simulados.
+
+#### Cliente para axios
+
+```ts
+// src/infrastructure/instances/httpAxios.ts
+
+import axios from 'axios';
+import { Http } from '../../domain/repositories/Http';
+
+const headers = {
+    'Content-Type': 'application/json'
+};
+
+export const httpAxios: Http = {
+    get: async <T>(path: string, params?: Record<string, any>, config?: any) => {
+        const response = await axios.get(path, { ...config, params: params, headers });
+        return response.data as T;
+    },
+    post: async <T>(path: string, params?: Record<string, any>, config?: any) => {
+        const response = await axios.post(path, { ...params }, { ...config, headers });
+        return response.data as T;
+    },
+    put: async <T>(path: string, params?: Record<string, any>, config?: any) => {
+        const response = await axios.put(path, { ...params }, { ...config, headers });
+        return response.data as T;
+    },
+    delete: async <T>(path: string, params?: any, config?: any) => {
+        const response = await axios.delete(path, { ...config, params: params, headers });
+        return response.data as T;
+    }
+};
+```
+
+#### Cliente para datos falsos
+
+```ts
+// src/infrastructure/instances/httpAxios.ts
+
+import { Http } from '../../domain/repositories/Http';
+import { productListMock } from '../../mocks/products';
+
+export const httpFake: Http = {
+    get: async <T>(path: string, params?: Record<string, any>, config?: any) => {
+        const response = await productListMock;
+        return response;
+    },
+    post: async <T>(path: string, params?: Record<string, any>, config?: any) => {
+        const response = await productListMock;
+        return response;
+    },
+    put: async <T>(path: string, params?: Record<string, any>, config?: any) => {},
+    delete: async <T>(path: string, params?: any, config?: any) => {}
+};
+```
+
+De esta manera, cuando quieras cambiar el cliente y usar, por ejemplo, fetch en lugar de axios, puedes crear un nuevo contenedor http que implemente la interfaz para http, pero usando la biblioteca fetch. ¡Fácil!
+
+Para finalizar esta parte, necesitamos una última cosa. Tenemos que crear un repositorio para productos dentro de la infraestructura. Este repositorio maneja la solicitud y la transformación de los datos de respuesta a nuestro modelo de dominio.
+
+```ts
+// src/infrastructure/repositories/productRepository.ts
+
+import { Product } from '../../domain/models/Product';
+import { ProductRepository } from '../../domain/repositories/ProductRepository';
+import { Http } from '../../domain/repositories/Http';
+import { ProductDTO } from '../../infrastructure/http/dto/ProductDTO';
+
+export const productRepository = (client: Http): ProductRepository => ({
+    getProducts: async () => {
+        const products = await client.get<ProductDTO>('');
+        return products.map((productDto): Product => ({ id: productDto.id, title: productDto.title, price: productDto.price }));
+    },
+
+    getProductsById: async id => {
+        const products = await client.get<ProductDTO>('', { id });
+        return products.map((productDto): Product => ({ id: productDto.id, title: productDto.title, price: productDto.price }));
+    }
+});
+```
+
+Como puede ver, `productRepository` es una función que recibe un cliente como parámetro (solo aquí está la inyección de dependencia).
+
+Para mayor comodidad, hemos creado un repositorio falso que implementa la interfaz `ProductRepository`.
+
+**Recuerde que el código de producción no debe contener ninguna referencia a datos falsos o simulados. Lo estamos utilizando para hacer que este proyecto sea funcional. Por este motivo, en producción debes olvidar la carpeta de `instancias`.**
+
+### Vistas 📱 💻
+
+La vista y capa para acceder a los datos están en infraestructura. Sin embargo, no deben comunicarse directamente. Vamos a crear un nuevo servicio para consumir nuestro repositorio, por lo que estos datos estarán disponibles para el resto de nuestra aplicación.
+
+```ts
+// src/domain/services/ProductService.ts
+
+import { ProductRepository } from '../repositories/ProductRepository';
+
+// Here we can change the repository by one that implement the IProductRepository interface
+//const repository: IProductRepository = productRepository;
+
+export const productService = (repository: ProductRepository): ProductRepository => ({
+    getProducts: () => {
+        return repository.getProducts();
+    },
+    getProductsById: id => {
+        return repository.getProductsById(id);
+    }
+});
+```
+
